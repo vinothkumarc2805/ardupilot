@@ -1087,6 +1087,14 @@ class chibios(Board):
             cfg.msg("Enabling -Werror", "no")
 
         if cfg.options.signed_fw:
+            if cfg.options.bootloader:    
+                from Crypto.PublicKey import ECC
+                cfg.define('WOLFSSL_USER_SETTINGS', 1)
+                cfg.define('SKIP_WOLFSSL_BINDINGS', 1)
+                env.INCLUDES += [ cfg.srcnode.find_dir('modules/wolfssl').abspath() ]
+                env.GIT_SUBMODULES += ['wolfssl']
+                env.BUILD_WOLFSSL = True
+                cfg.load('wolfssl')            
             cfg.define('AP_SIGNED_FIRMWARE', 1)
             env.CFLAGS += [
                 '-DAP_SIGNED_FIRMWARE=1',
@@ -1109,7 +1117,9 @@ class chibios(Board):
         super(chibios, self).build(bld)
         bld.ap_version_append_str('CHIBIOS_GIT_VERSION', bld.git_submodule_head_hash('ChibiOS', short=True))
         bld.load('chibios')
-
+        if bld.env.BUILD_WOLFSSL:
+            bld.load('wolfssl')
+            
     def pre_build(self, bld):
         '''pre-build hook that gets called before dynamic sources'''
         from waflib.Context import load_tool
